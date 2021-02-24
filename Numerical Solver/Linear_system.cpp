@@ -2,10 +2,17 @@
 #include "stdlib.h"
 #include "iostream"
 double ILL_CONDITIONING = 0.0001;
+/*
+ * A class to solve a system of linear equations
+ * Two ways to solve the quations:
+ * 1. solve() -> uses Gauss Elimination with pivoting and scaling
+ * 2. solve_until() -> uses Gauss-Seidel iterations with convergence criterion
+*/
+
 
 Linear_system::Linear_system(const int& x, const int& y)
 	:valid_solution(false)
-	, n(x)
+	, n(x)  
 	, m(y)
 	, A(n, m)
 	, x(new double[n])
@@ -33,6 +40,12 @@ Linear_system::Linear_system(const int& x, const int& y, const Matrix& A)
 {
 }
 
+/// <summary>
+/// The constructor function used in regression, it populates the following parameters
+/// * [A | b]  is the augmented matrix
+/// * n: number of points
+/// * m: polynomial degree
+/// </summary>
 Linear_system::Linear_system(const Matrix& A, const Matrix& b)
 	:valid_solution(false)
 	, n(A.n_rows())
@@ -42,6 +55,10 @@ Linear_system::Linear_system(const Matrix& A, const Matrix& b)
 {
 }
 
+/// <summary>
+/// A function to solve the system of linear quations using gauss elimination
+/// Returns a solution Matrix containing the coefficients
+/// </summary>
 
 Matrix Linear_system::solve()
 {
@@ -103,42 +120,22 @@ Matrix Linear_system::solve()
 	for (int i = 0; i < n; i++)
 		diagonal = diagonal * A.at(L[i], i) / maxs[L[i]];
 	valid_solution = (diagonal > ILL_CONDITIONING);
-
+	
 	return Matrix(n, 1, x);
 	
 }
 
-Matrix Linear_system::solve_iteratively(double initials[], const int& n_iter) const
-{
-	double* previous = new double[n];
-	for (int i = 0; i < n; i++)
-	{
-		x[i] = initials[i];
-		previous[i] = initials[i];
-	}
+/// <summary>
+/// A function to solve the system of linear quations using Gauss-Seidel iterations
+/// Inputs:
+/// initials[] <- array of initial values
+/// n_iter     <- not really an input, it is a variable to keep the number of iterations, 
+///   can be used later in the caller function to report number of iterations
+/// A small value "epsilon" is used to loop through iterations until conversion
+/// Iteration stops when the difference between current and last iteration is less than epsilon
+/// Returns a solution Matrix containing the coefficients
+/// </summary>
 
-	for (int k = 0; k < n_iter; k++)
-	{
-		for (int i = 0; i < n; i++)
-		{
-			for (int j = 0; j < n; j++)
-				if (i != j)
-					x[i] += -A.at(i, j) * previous[j];
-			x[i] = x[i] + (A.at(i, m - 1));
-			x[i] = x[i] / A.at(i, i);
-		}
-		for (int i = 0; i < n; i++)
-		{
-			previous[i] = x[i];
-			x[i] = initials[i];
-		}
-
-		//std::cout << Matrix(n, 1, previous);
-	}
-
-	return Matrix(n, 1, previous);
-}
-//TOLERANCE = 0.01; 
 Matrix Linear_system::solve_until(double initials[], int& n_iter, float epsilon) const
 {
 
@@ -161,7 +158,7 @@ Matrix Linear_system::solve_until(double initials[], int& n_iter, float epsilon)
 					x[i] += -A.at(i, j) * previous[j];
 			x[i] += (A.at(i, m - 1)); //add the b term
 			x[i] /= A.at(i, i); //divide by the factor multiplied by this x
-			delta = abs(previous[i] - x[i]);
+			delta = abs(previous[i] - x[i])/ previous[i];
 			previous[i] = x[i];
 		}
 
@@ -170,7 +167,8 @@ Matrix Linear_system::solve_until(double initials[], int& n_iter, float epsilon)
 		for (int i = 0; i < n;i++)
 			x[i] = initials[i];
 	} while (delta > epsilon);
-
+	
+	// Save the number of iterations 
 	n_iter = count;
 
 	return Matrix(n, 1, previous);

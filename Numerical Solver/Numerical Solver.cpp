@@ -17,7 +17,7 @@ using namespace std;
 
 
 //Normalization functions >>> Used for normalizing housing data 
-
+//Normalizing features matrix
 Matrix norm_x(const Matrix x, const int n)
 {
 	int i, j;
@@ -42,6 +42,7 @@ Matrix norm_x(const Matrix x, const int n)
 
 	return x_tmp;
 }
+//Normalizing output vector
 double* norm_y(const double y[], const int n) {
 	int i;
 	double* y_norm = new double[n];
@@ -57,12 +58,13 @@ double* norm_y(const double y[], const int n) {
 		y_norm[i] = (y[i] - y_min) / (y_max - y_min);
 	return y_norm;
 }
-
+//Denormalizing predicted output >> used in reporting the prediction
 double denorm_y(const double y_norm, const double y_min, const double y_max) {
 	double y_denorm = y_norm * (y_max - y_min) + y_min;
 	return y_denorm;
 }
 
+//Calculate mean-square error
 double calc_mse(const double y[], const double y_pred[], const int n) {
 	double mse = 0;
 	for (int i = 0; i < n; i++)
@@ -70,16 +72,17 @@ double calc_mse(const double y[], const double y_pred[], const int n) {
 	return mse;
 }
 
-
-
+// Starts single variable regression given:
+//		filename:	Input CSV file name
+//		m:			Polynomial Degree desired
+//		s:			Solver selection (1. Gauss Elimination, 2. Gauss-Seidel)
 void regress_line(string filename, int m, int s) {
 	int i, n;
-	// Reading training data file
-
+	
+	// Reading training input data file, construct x[], y[] 
 	ifstream  trainData;
 	trainData.open(filename);
 	cout << "Opened file: " << filename;
-
 
 	string line;
 	vector<vector<string> > parsedCsv;
@@ -106,10 +109,11 @@ void regress_line(string filename, int m, int s) {
 	}
 
 
-
+	//Initialize and fit the regressor
 	univar_regressor polyRegress = univar_regressor(x, y, m, s);
 	Matrix coeff = polyRegress.fit(x, y, n, m, s);
 
+	//Retrieve the ill_conditioned flag and number of gauss-seidel iterations if any
 	bool valid_sol = polyRegress.is_valid_solution();
 	int num_iterations = polyRegress.seidel_iterations;
 
@@ -118,9 +122,12 @@ void regress_line(string filename, int m, int s) {
 	else
 		cout << "System is ill conditioned" << endl;
 
+	//Print the coefficients to the console
 	cout << "\nThe values of the solution coefficients are:\n";
 	for (int idx = 0; idx <= m; idx++)
 		cout << "x^" << idx << "=" << coeff.at(idx, 0) << endl;            // Print the values of x^0,x^1,x^2,x^3,....    
+	
+	//Print the fitted equation
 	cout << "\nThe fitted Polynomial is given by:\ny=";
 	for (int idx = 0; idx <= m; idx++)
 		cout << " + (" << coeff.at(idx, 0) << ")" << "x^" << idx;
@@ -147,7 +154,6 @@ void regress_line(string filename, int m, int s) {
 	//Plotting original points vs. fitted line
 	std::vector<double> x_vec(x, x + n);
 	std::vector<double> y_vec(y, y + n);
-	
 
 	//Formulate the equation with the coefficients
 	string eqn = "";
@@ -162,9 +168,16 @@ void regress_line(string filename, int m, int s) {
 	
 }
 
-int regress_2d(const int x1, const int x2, const int s) {  //Accepts the indexes of the needed two columns for regression
+// Starts 2-D variable regression for the Housing datset,
+// Housing dataset contains 4 features, taken two of them at a time
+//   regression is done 6 times, one for each possible combination of two features
+//	Input:
+//		x1			The column index in the file for the first feature
+//		x2			The column index in the file for the second feature
+//		s:			Solver selection (1. Gauss Elimination, 2. Gauss-Seidel)
+int regress_2d(const int x1, const int x2, const int s) {  
 	int i, j, n, m;
-	m = 2;    // two dimensional input x: x_1, x_2
+	m = 2;    // two dimensional input x: [x1, x2]
 	ifstream  trainData;
 	try {
 		trainData.open("Housing.csv");
@@ -190,9 +203,9 @@ int regress_2d(const int x1, const int x2, const int s) {  //Accepts the indexes
 	}
 	n = parsedCsv.size() - 1;
 
+	//Populate the input matrix
 	Matrix x = Matrix(3, n);
 	double *y = new double[n];
-
 	for (i = 1; i <= n; ++i) // start at i = 1 to skip header line
 	{
 		x.set_at(0, i - 1, 1);        // put 1's in x0 for the algorithm to work, data points will be stored in x1, x2
@@ -211,13 +224,15 @@ int regress_2d(const int x1, const int x2, const int s) {  //Accepts the indexes
 	Matrix x_norm(m + 1, m + 1);
 	x_norm = norm_x(x, n);
 
-
+	//Initialize and fit the 2D regressor
 	multivar_regressor polyRegress2D = multivar_regressor(x_norm, y_norm, n, m, s);
 	Matrix coeff = polyRegress2D.fit(x_norm, y_norm, n, m, s);
 
+	//Print the coefficients
 	cout << "\nThe values of the solution coefficients are:\n";
 	for (int idx = 0; idx <= m; idx++)
 		cout << "x_" << idx << "=" << coeff.at(idx, 0) << endl;            // Print the values of x^0,x^1,x^2,x^3,....    
+	//Print the equation
 	cout << "\nThe fitted Polynomial is given by:\ny=";
 	for (int idx = 0; idx <= m; idx++)
 		cout << " + (" << coeff.at(idx, 0) << ")" << "x_" << idx;
@@ -244,6 +259,7 @@ int regress_2d(const int x1, const int x2, const int s) {  //Accepts the indexes
 		y_norm_pred[i] = polyRegress2D.predict(xi, coeff, m);
 	}
 
+	//De-normalizing prediction
 	for (i = 0; i < n; i++)
 	{
 		y_pred[i] = denorm_y(y_norm_pred[i], y_min, y_max);
@@ -266,18 +282,16 @@ int regress_2d(const int x1, const int x2, const int s) {  //Accepts the indexes
 	return 0;
 }
 
-
+//Starts the interpolation given an input file name
+//It calls both newton and spline interpolators
 void interpolate(string filename) {
 
-	//Read input file:
 
 	int i, n;
 	// Reading training data file
-
 	ifstream  trainData;
 	trainData.open(filename);
 	cout << "Opened file: " << filename;
-
 
 	string line;
 	vector<vector<string> > parsedCsv;
@@ -302,15 +316,17 @@ void interpolate(string filename) {
 		x[i - 1] = stod(parsedCsv[i][0]);
 		y[i - 1] = stod(parsedCsv[i][1]);
 	}
-
+	//Newton interpolation
 	cout << "\nNewton Interpolation" << endl;
 	cout << "=======================" << endl;
 
 	//Define interpolation
 	Newton_interpolator ni(x, y, n);
+
 	//Fit to get coefficients
 	double* ni_coeff = new double[n];
 	ni_coeff = ni.fit();
+
 	//Output to file
 	string coeff_filename = "newton_coeff_" + filename;
 	ofstream outfile;
@@ -342,7 +358,6 @@ void interpolate(string filename) {
 	}
 
 	//doubling the points once more
-
 	for (int i = 0; i < (n + (n - 1)) + (2 * n - 2); i++)
 	{
 		if (i % 2 != 1)
@@ -380,14 +395,13 @@ void interpolate(string filename) {
 	cout << "=======================" << endl;
 
 	//Define interpolation
-
 	Spline_interpolator s(x, y, n);
 
 	//Fit to get coefficients
 	s.fit();
-
 	Matrix s_coeff = s.get_coefficients();
 
+	//Print the coefficients
 	cout << s_coeff;
 	cout << endl;
 
@@ -400,10 +414,6 @@ void interpolate(string filename) {
 	outfile.close();
 	
 	//doubling the points x and y.
-	//double* x_ = new double[2 * n - 1];
-	//double* y_ = new double[2 * n - 1];
-	//double* x__ = new double[(n + (n - 1)) + (2 * n - 2)];
-	//double* y__ = new double[(n + (n - 1)) + (2 * n - 2)];
 	for (int i = 0; i < n + (n - 1); i++)
 	{
 		if (i % 2 != 1)
@@ -420,8 +430,7 @@ void interpolate(string filename) {
 
 	}
 
-	//doubling the points once more
-
+	//Doubling the points once more
 	for (int i = 0; i < (n + (n - 1)) + (2 * n - 2); i++)
 	{
 		if (i % 2 != 1)
@@ -456,33 +465,48 @@ void interpolate(string filename) {
 }
 
 
-
+/// The main application function, it calls all the above functions. It asks for the following choices
+/// 0. Apply equation solvers to the test case in the assignment
+/// 1. Do single variable regression
+///			1. Using Gauss Elimination
+///			2. Usnig Gauss-Seidel
+/// 2. Do 2D regression on Housing dataset
+///			1. Using Gauss Elimination
+///			2. Usnig Gauss-Seidel
+/// 3. Do interpolation
+/// 
 int main()
 {
 	int number = 0;
 	cout << "Chose what do you want to do: \n \t0: Gauss-Seidel test. \n \t1: Single variable Polynomial Regression. \n\t2: 2D Ploynomial Regression. \n\t3: Interpolation. \n";
 	cin >> number;
 
+	//First Choice, Test the equation solvers
 	if (number == 0)
 	{
-		double temp_[12] = { 3,-0.1, -0.2, 7.85, 0.1, 7, -0.3, -19.3, 0.3, -0.2, 10, 71.4 };
-		Matrix toto(3, 4, temp_);
-		Linear_system soso(3, 4, toto);
-		cout << "\nUsing Gauss elimination:\n" << soso.solve() << endl;
+		double test_case[12] = { 2, 1, -1, 0, 1, 4, 3, 14, -1, 2, 7, 30};
+		Matrix AB(3, 4, test_case);
+		Linear_system ls(3, 4, AB);
+		cout << "\nUsing Gauss elimination:\n" << ls.solve() << endl;
 		double initials[3] = { 0, 0, 0 };
-		cout << "\nUsing Seidel elimination:\n" << soso.solve_iteratively(initials, 100) << endl;
+		Matrix AB1(3, 4, test_case);
+		Linear_system ls1(3, 4, AB1);
 		int n_ = 0;
-		cout << "\nUsing Seidel elimination with solve_until:\n" << soso.solve_until(initials, n_, 0.01) << endl;
+		cout << "\nUsing Seidel elimination with Gauss-Seidel: \n" << ls1.solve_until(initials, n_, 0.00000001) << endl;
 		cout << "\nNumber of iterations: " << n_ << endl;
 	}
 
+	// Second Choice: Linear Regression
 	else if (number == 1)
 	{
+		// Ask for the desired polynomial degree to fit
+		//   the higher the order, the better the fitting, more calculation
 		int m;
 		cout << "Linear Regression" << endl;
 		cout << "\nWhat degree of Polynomial do you want to use for the fit?\n";
 		cin >> m;
 
+		//Ask for the desired equation solver
 		cout << "\n Chose to Sove using: \n\t1.Gauss Scaled Elimination. \n\t2.Iterative Gauss-Siedel\n";
 		int s;
 		cin >> s;
@@ -490,19 +514,23 @@ int main()
 		cout << "===========================" << endl;
 			cout << "\n\nUsing First Dataset:" << endl;
 			cout << "===========================" << endl;
-
+			
+			//Call the regressor for the first dataset
 			regress_line("2_a_dataset_1.csv", m, s);
 
 			cout << "\n===========================" << endl;
 			cout << "\n\nUsing Second Dataset:" << endl;
 			cout << "===========================" << endl;
 
+			//Call the regressor for the second dataset
 			regress_line("2_a_dataset_2.csv", m, s);
 	
 
 	}
+	// Third Choice: 2D regression on Housing dataset
 	else if (number == 2) {
 
+		//Ask to select the equation solver
 		cout << "\n Chose to Sove using: \n\t1.Gauss Scaled Elimination. \n\t2.Iterative Gauss-Siedel\n";
 		int s;
 		cin >> s;
@@ -510,6 +538,7 @@ int main()
 		cout << "2D Ploynomial Regression" << endl;
 		cout << "============================" << endl;
 
+		//Call the 2D regressor for each combination of 2 features of the 4 available features
 		cout << "///////////////////////////////////////" << endl;
 		cout << "\nUsing \"bedrooms\" and \"bathrooms\"" << endl;
 		int out = regress_2d(0, 1, s);
@@ -526,6 +555,7 @@ int main()
 
 
 	}
+	// Forth Coice: Do the interpolation
 	else if (number == 3) {
 		cout << "Interpolation" << endl;
 
@@ -533,12 +563,14 @@ int main()
 		cout << "\n\nUsing First Dataset:" << endl;
 		cout << "===========================" << endl;
 
+		//Call the interpolator for the first dataset
 		interpolate("3_dataset_1.csv");
 
 		cout << "===========================" << endl;
 		cout << "\n\nUsing Second Dataset:" << endl;
 		cout << "===========================" << endl;
 		
+		//Call the interpolator for the second dataset
 		interpolate("3_dataset_2.csv");
 
 	}
@@ -548,7 +580,6 @@ int main()
 	int ss;
 	cin >> ss;
 	return 0;
-
 
 }
 

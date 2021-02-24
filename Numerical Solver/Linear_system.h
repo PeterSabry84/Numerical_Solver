@@ -5,7 +5,7 @@ class Linear_system
 {
 private:
 	bool valid_solution;
-	const int n;
+	const int n; 
 	const int m;
 	Matrix A;
 	double* x;
@@ -19,7 +19,6 @@ public:
 	~Linear_system();
 	
 	Matrix solve();
-	Matrix solve_iteratively(double initials [], const int & n_iter) const;
 	Matrix solve_until(double initials[], int & n_iter, float epsilon) const;
 	bool is_valid_solution() { return valid_solution;}
 
