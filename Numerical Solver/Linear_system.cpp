@@ -145,7 +145,7 @@ Matrix Linear_system::solve_until(double initials[], int& n_iter, float epsilon)
 	double* previous = new double[n];
 	for (int i = 0; i < n; i++)
 	{
-		//x[i] = initials[i];
+		x[i] = initials[i];
 		previous[i] = initials[i];
 	}
 
@@ -156,29 +156,22 @@ Matrix Linear_system::solve_until(double initials[], int& n_iter, float epsilon)
 
 		for (int i = 0; i < n; i++)
 		{
-			for (int j = 0; j < n; j++)
+			for (int j = 0; j < n; j++) //loop for x's 
 				if (i != j)
 					x[i] += -A.at(i, j) * previous[j];
-			x[i] = x[i] + (A.at(i, m - 1));
-			x[i] = x[i] / A.at(i, i);
-		}
-		delta = abs(previous[0] - x[0]);
-		for (int i = 0; i < n; i++)
-		{
+			x[i] += (A.at(i, m - 1)); //add the b term
+			x[i] /= A.at(i, i); //divide by the factor multiplied by this x
+			delta = abs(previous[i] - x[i]);
 			previous[i] = x[i];
-			x[i] = initials[i];
 		}
 
-		//std::cout << Matrix(n, 1, previous);
 		count++;
+		//re-intitialize the x's to their initial valuse since you append to their values in the loop above (so you should start from initials)
+		for (int i = 0; i < n;i++)
+			x[i] = initials[i];
 	} while (delta > epsilon);
 
 	n_iter = count;
-
-	for (int i = 0; i < n; i++)
-	{
-		previous[i] = previous[i];
-	}
 
 	return Matrix(n, 1, previous);
 

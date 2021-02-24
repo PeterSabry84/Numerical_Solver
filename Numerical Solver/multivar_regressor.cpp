@@ -8,7 +8,7 @@ using namespace std;
 #include "Linear_system.h"
 #include "Matrix.h"
 
-multivar_regressor::multivar_regressor(const Matrix x, const double y[], const int n, const int m)
+multivar_regressor::multivar_regressor(const Matrix x, const double y[], const int n, const int m, const int s)
 	:n(n)
 	, m(m)
 	, x(Matrix(m+1, m+1))
@@ -21,7 +21,7 @@ multivar_regressor::~multivar_regressor()
 
 }
 
-Matrix multivar_regressor::fit(const Matrix x, const double y[], const int n, const int m) {
+Matrix multivar_regressor::fit(const Matrix x, const double y[], const int n, const int m, const int s) {
 
 	int i, j;
 	Matrix A = Matrix(m + 1, m + 1);
@@ -45,14 +45,28 @@ Matrix multivar_regressor::fit(const Matrix x, const double y[], const int n, co
 
 	}
 	//cout << b << endl;
-	Matrix out = A.augment(b); //don't forget to multiply with -1 to the b elements.
+	Matrix out = A.augment(b); 
 	cout << "\nAugmented Matrix:\n" << endl;
 	cout << out << endl;
 	
 	Linear_system S(A, b);
-	Matrix sol = S.solve();
+
+	if (s == 1) {
+		Matrix sol = S.solve();
+		return sol;
+	}
 	
-	return sol;
+	
+	else if (s == 2) {
+		//In case of Gauss-Siedel is selected:
+		double* arr = new double[m + 1];
+		//initialization
+		for (int k = 0; k < m + 1; k++)
+			arr[k] = 0.1;
+		
+		Matrix sol = S.solve_until(arr, seidel_iterations, 0.01f);
+		return sol;
+	}
 
 }
 

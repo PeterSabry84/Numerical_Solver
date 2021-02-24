@@ -126,7 +126,7 @@ void regress_line(string filename, int m, int s) {
 		cout << " + (" << coeff.at(idx, 0) << ")" << "x^" << idx;
 	cout << "\n";
 	if (s == 2)
-		cout << "Gauss Seidel Iterations: " + num_iterations << endl;
+		cout << "\n\t Gauss Seidel Iterations: " << num_iterations << endl;
 
 	// Running Prediction on training data
 	double *y_pred = new double[n];
@@ -134,7 +134,6 @@ void regress_line(string filename, int m, int s) {
 		y_pred[i] = polyRegress.predict(x[i], coeff, m);
 
 	// Printing Actual vs. prediction on console
-	cout << "\n Dataset 2_a_dataset_1.csv \n" << endl;
 	cout << "\n Predictions: \n" << endl;
 	cout << "\nx   y_pred    y" << endl;
 	cout << "=================" << endl;
@@ -163,7 +162,7 @@ void regress_line(string filename, int m, int s) {
 	
 }
 
-int regress_2d(const int x1, const int x2) {  //Accepts the indexes of the needed two columns for regression
+int regress_2d(const int x1, const int x2, const int s) {  //Accepts the indexes of the needed two columns for regression
 	int i, j, n, m;
 	m = 2;    // two dimensional input x: x_1, x_2
 	ifstream  trainData;
@@ -213,8 +212,8 @@ int regress_2d(const int x1, const int x2) {  //Accepts the indexes of the neede
 	x_norm = norm_x(x, n);
 
 
-	multivar_regressor polyRegress2D = multivar_regressor(x_norm, y_norm, n, m);
-	Matrix coeff = polyRegress2D.fit(x_norm, y_norm, n, m);
+	multivar_regressor polyRegress2D = multivar_regressor(x_norm, y_norm, n, m, s);
+	Matrix coeff = polyRegress2D.fit(x_norm, y_norm, n, m, s);
 
 	cout << "\nThe values of the solution coefficients are:\n";
 	for (int idx = 0; idx <= m; idx++)
@@ -460,8 +459,6 @@ void interpolate(string filename) {
 
 int main()
 {
-
-
 	int number = 0;
 	cout << "Chose what do you want to do: \n \t0: Gauss-Seidel test. \n \t1: Single variable Polynomial Regression. \n\t2: 2D Ploynomial Regression. \n\t3: Interpolation. \n";
 	cin >> number;
@@ -500,25 +497,33 @@ int main()
 			cout << "\n\nUsing Second Dataset:" << endl;
 			cout << "===========================" << endl;
 
-			//regress_line("2_a_dataset_2.csv", m, s);
+			regress_line("2_a_dataset_2.csv", m, s);
 	
 
 	}
 	else if (number == 2) {
+
+		cout << "\n Chose to Sove using: \n\t1.Gauss Scaled Elimination. \n\t2.Iterative Gauss-Siedel\n";
+		int s;
+		cin >> s;
+		cout << "============================" << endl;
 		cout << "2D Ploynomial Regression" << endl;
+		cout << "============================" << endl;
+
 		cout << "///////////////////////////////////////" << endl;
 		cout << "\nUsing \"bedrooms\" and \"bathrooms\"" << endl;
-		int out = regress_2d(0, 1);
+		int out = regress_2d(0, 1, s);
 		cout << "\nUsing \"bedrooms\" and \"stories\"" << endl;
-		out = regress_2d(0, 2);
+		out = regress_2d(0, 2, s);
 		cout << "\nUsing \"bedrooms\" and \"lotsize\"" << endl;
-		out = regress_2d(0, 3);
+		out = regress_2d(0, 3, s);
 		cout << "\nUsing \"bathrooms\" and \"stories\"" << endl;
-		out = regress_2d(1, 2);
+		out = regress_2d(1, 2, s);
 		cout << "\nUsing \"bathrooms\" and \"lotsize\"" << endl;
-		out = regress_2d(1, 3);
+		out = regress_2d(1, 3, s);
 		cout << "\nUsing \"stories\" and \"lotsize\"" << endl;
-		out = regress_2d(2, 3);
+		out = regress_2d(2, 3, s);
+
 
 	}
 	else if (number == 3) {

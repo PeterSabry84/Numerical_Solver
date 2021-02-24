@@ -20,7 +20,7 @@ public:
 	
 	Matrix solve();
 	Matrix solve_iteratively(double initials [], const int & n_iter) const;
-	Matrix solve_until(double initials[], int& n_iter, float epsilon) const;
+	Matrix solve_until(double initials[], int & n_iter, float epsilon) const;
 	bool is_valid_solution() { return valid_solution;}
 
 };
